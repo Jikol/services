@@ -1,0 +1,14 @@
+version: 3
+
+tasks:
+  up:
+    desc: Run rustdesk server hbbr and hbbs
+    aliases: [u]
+    platforms: [linux]
+    cmd: docker compose up -d
+
+  down:
+    desc: Remove rustdesk server hbbr and hbbs
+    aliases: [d]
+    platforms: [linux]
+    cmd: docker compose down -v --rmi all

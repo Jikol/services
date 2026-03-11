@@ -1,0 +1,30 @@
+services:
+  hbbs:
+    container_name: hbbs
+    image: rustdesk/rustdesk-server:1.1.9
+    command: hbbs
+    ports:
+      - 21115:21115
+      - 21116:21116
+      - 21116:21116/udp
+      - 21118:21118
+    restart: unless-stopped
+    depends_on:
+      - hbbr
+    volumes:
+      - hbbs:/root
+
+  hbbr:
+    container_name: hbbr
+    image: rustdesk/rustdesk-server:1.1.9
+    command: hbbr
+    ports:
+      - 21117:21117
+      - 21119:21119
+    restart: unless-stopped
+    volumes:
+      - hbbr:/root
+
+volumes:
+  hbbs:
+  hbbr:
