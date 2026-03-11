@@ -1,0 +1,26 @@
+name: registry
+
+services:
+  registry-ui:
+    container_name: registry-ui
+    image: joxit/docker-registry-ui:latest
+    environment:
+      REGISTRY_TITLE: Local Docker Registry
+      NGINX_PROXY_PASS_URL: http://registry-server:5000
+      SINGLE_REGISTRY: true
+      DELETE_IMAGES: true
+      SHOW_CATALOG_NB_TAGS: true
+    ports:
+      - "5055:80"
+    restart: unless-stopped
+
+  registry-server:
+    container_name: registry-server
+    image: registry:2.8.3
+    environment:
+      REGISTRY_STORAGE_DELETE_ENABLED: 'true'
+    ports:
+      - "5050:5000"
+    restart: unless-stopped
+    volumes:
+      - ./data:/var/lib/registry

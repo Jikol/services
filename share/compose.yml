@@ -1,0 +1,11 @@
+name: share
+
+services:
+  share-server:
+    container_name: share-server
+    image: tanq16/local-content-share:main
+    ports:
+      - "9999:8080"
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data

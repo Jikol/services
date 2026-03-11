@@ -1,0 +1,30 @@
+name: ftp
+
+services:
+  ftp-server:
+    container_name: ftp-server
+    image: garethflowers/ftp-server:0.9
+    environment:
+      - PUBLIC_IP=localhost
+      - FTP_PASS=admin
+      - FTP_USER=admin
+    ports:
+      - "20-21:20-21/tcp"
+      - "40000-40009:40000-40009/tcp"
+    restart: unless-stopped
+    volumes:
+      - ./data:/home/admin
+
+  ftp-ui:
+    container_name: ftp-ui
+    image: filebrowser/filebrowser:s6
+    environment:
+      - PUID=1000
+      - PGID=1000
+    ports:
+      - "8088:80"
+    restart: unless-stopped
+    volumes:
+      - ./data:/srv
+      - ./database/filebrowser.db:/database/filebrowser.db
+      - ./settings:/config
