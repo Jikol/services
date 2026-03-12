@@ -1,9 +1,0 @@
-FROM mongo-express:0.54
-
-ENV ME_CONFIG_OPTIONS_EDITORTHEME="material"
-
-EXPOSE 8081
-
-RUN apk update && apk upgrade \
-	&& apk add --no-cache vim fish \
-	&& ln -sf /usr/bin/fish /bin/sh

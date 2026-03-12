@@ -1,0 +1,13 @@
+name: verdaccio
+
+services:
+  verdaccio:
+    container_name: verdaccio
+    image: verdaccio/verdaccio:6.3
+    ports:
+      - "4848:4873"
+    restart: unless-stopped
+    volumes:
+      - ./config:/verdaccio/conf/config.yml
+      - ./data/storage:/verdaccio/storage
+      - ./data/plugins:/verdaccio/plugins
