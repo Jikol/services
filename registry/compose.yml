@@ -3,13 +3,9 @@ name: registry
 services:
   registry-ui:
     container_name: registry-ui
-    image: joxit/docker-registry-ui:latest
+    image: ghcr.io/eznix86/docker-registry-ui:0.5.5
     environment:
-      REGISTRY_TITLE: Local Docker Registry
-      NGINX_PROXY_PASS_URL: http://registry-server:5000
-      SINGLE_REGISTRY: true
-      DELETE_IMAGES: true
-      SHOW_CATALOG_NB_TAGS: true
+      REGISTRY_URL: http://registry-server:5000
     ports:
       - "5055:80"
     restart: unless-stopped
