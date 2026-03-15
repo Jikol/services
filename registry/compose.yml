@@ -5,9 +5,9 @@ services:
     container_name: registry-ui
     image: ghcr.io/eznix86/docker-registry-ui:0.5.5
     environment:
-      REGISTRY_URL: http://registry-server:5000
+      REGISTRY_URL: http://${REGISTRY_PUBLIC_HOST:?error}:5000
     ports:
-      - "5055:80"
+      - "5050:80"
     restart: unless-stopped
 
   registry-server:
@@ -15,8 +15,13 @@ services:
     image: registry:2.8.3
     environment:
       REGISTRY_STORAGE_DELETE_ENABLED: 'true'
+      REGISTRY_HTTP_ADDR: 0.0.0.0:5000
     ports:
-      - "5050:5000"
+      - "5000:5000"
     restart: unless-stopped
     volumes:
       - ./data:/var/lib/registry
+    networks:
+      default:
+        aliases:
+          - ${REGISTRY_PUBLIC_HOST:?error}
