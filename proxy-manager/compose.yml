@@ -1,0 +1,35 @@
+services:
+  proxy-manager:
+    container_name: proxy-manager
+    image: jc21/nginx-proxy-manager:2.14.0
+    environment:
+      INITIAL_ADMIN_EMAIL: ${PROXY_MANAGER_EMAIL:?error}
+      INITIAL_ADMIN_PASSWORD: ${PROXY_MANAGER_PASSWORD:?error}
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    restart: unless-stopped
+    tty: true
+    healthcheck:
+      test: [ "CMD", "/usr/bin/check-health" ]
+      interval: 10s
+      timeout: 5s
+    networks:
+      - proxy
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+
+  proxy-manager-healthcheck:
+    container_name: proxy-manager-healthcheck
+    image: alpine
+    restart: no
+    depends_on:
+      proxy-manager:
+        condition: service_healthy
+    command: [ "sh", "-c", "echo 'All services are healthy, exiting.'" ]
+
+networks:
+  proxy:
+    external: true
