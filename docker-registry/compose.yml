@@ -10,16 +10,12 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/var/lib/registry
-    networks:
-      default:
-        aliases:
-          - ${REGISTRY_PUBLIC_HOST:?error}
 
   docker-registry-ui:
     container_name: docker-registry-ui
     image: ghcr.io/eznix86/docker-registry-ui:0.5.5
     environment:
-      REGISTRY_URL: http://${REGISTRY_PUBLIC_HOST:?error}:5000
+      REGISTRY_URL: ${REGISTRY_PUBLIC_HOST:?error}
     ports:
       - "5050:80"
     restart: unless-stopped
