@@ -1,0 +1,14 @@
+services:
+  registry-ui:
+    ports: []
+    networks:
+      - proxy
+
+  registry-server:
+    ports: []
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
