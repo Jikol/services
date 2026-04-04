@@ -1,12 +1,12 @@
 services:
-  registry-ui:
-    environment:
-      REGISTRY_URL: http://${REGISTRY_PUBLIC_HOST:?error}
+  docker-registry:
     ports: []
     networks:
       - proxy
 
-  registry-server:
+  docker-registry-ui:
+    environment:
+      REGISTRY_URL: http://${REGISTRY_PUBLIC_HOST:?error}
     ports: []
     networks:
       - proxy
