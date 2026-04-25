@@ -1,0 +1,85 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: 3
+
+dotenv: [".env.local"]
+
+tasks:
+  ## deployment tasks ##
+  proxy:compose:
+    desc: |
+      Run proxy-manager docker compose | 
+      Usage: task proxy:compose (p:c) [
+        -- attach; -- down;
+      ]
+    aliases: [p:c]
+    requires:
+      vars:
+        - PROXY_MANAGER_EMAIL
+        - PROXY_MANAGER_PASSWORD
+    cmds:
+      - task: docker:compose
+        vars:
+          CLI_ARGS: "{{.CLI_ARGS}}"
+          SERVICE_DIR: proxy-manager
+
+  registry:compose:
+    desc: |
+      Run docker-registry docker compose |
+      Usage: task registry:compose (p:c) [
+        -- attach; -- down;
+        BEHIND_PROXY=true/false, default false;
+      ]
+    aliases: [r:c]
+    vars:
+      BEHIND_PROXY: '{{.BEHIND_PROXY | default "false"}}'
+    requires:
+      vars:
+        - REGISTRY_PROTOCOL
+        - REGISTRY_HOSTNAME
+        - REGISTRY_PORT
+    cmds:
+      - task: docker:compose
+        vars:
+          CLI_ARGS: "{{.CLI_ARGS}}"
+          SERVICE_DIR: docker-registry
+          ADDITIONAL_COMPOSE: '{{if eq .BEHIND_PROXY "true"}}compose.proxy.yml{{end}}'
+  ## ---------------- ##
+  ## internal tasks ##
+  docker:compose:
+    internal: true
+    dir: "{{.ROOT_DIR}}/{{.SERVICE_DIR}}"
+    platforms: [linux]
+    vars:
+      COMPOSE_FILES: "-f compose.yml{{if .ADDITIONAL_COMPOSE}} -f {{.ADDITIONAL_COMPOSE}}{{end}}"
+    cmds:
+      # prettier-ignore
+      - cmd: |-
+          sh -c '
+          trap "docker compose {{.COMPOSE_FILES}} down --remove-orphans; exit 0" INT
+          docker compose {{.COMPOSE_FILES}} up -d --force-recreate
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            docker compose {{.COMPOSE_FILES}} logs
+            docker compose {{.COMPOSE_FILES}} down --remove-orphans
+            exit 1
+          fi
+          docker compose {{.COMPOSE_FILES}} logs
+          '
+        if: '{{eq .CLI_ARGS ""}}'
+      - cmd: |-
+          sh -c '
+          trap "docker compose {{.COMPOSE_FILES}} down --remove-orphans; exit 0" INT
+          docker compose {{.COMPOSE_FILES}} up --force-recreate
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            docker compose {{.COMPOSE_FILES}} logs
+            docker compose {{.COMPOSE_FILES}} down --remove-orphans
+            exit 1
+          fi
+          docker compose {{.COMPOSE_FILES}} down --remove-orphans
+          '
+        if: '{{eq .CLI_ARGS "attach"}}'
+      - cmd: docker compose {{.COMPOSE_FILES}} down --remove-orphans
+        if: '{{eq .CLI_ARGS "down"}}'
+  ## -------------- ##

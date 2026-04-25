@@ -6,8 +6,6 @@ services:
 
   docker-registry-ui:
     ports: []
-    environment:
-      REGISTRY_URL: ${REGISTRY_PUBLIC_URL:?error}
     networks:
       - proxy
 
