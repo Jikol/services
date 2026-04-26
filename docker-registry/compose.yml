@@ -10,7 +10,6 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/var/lib/registry
-      - ./auth:/auth:ro
     networks:
       default:
         aliases:
