@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/home/admin
-
+ 
   ftp-ui:
     container_name: ftp-ui
     image: filebrowser/filebrowser:s6
