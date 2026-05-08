@@ -1,6 +1,8 @@
 desktop.ini
+.claude
 **/*.local
 **/*/data
 **/*/logs
 **/*/settings
 **/*/database
+**/*/auth

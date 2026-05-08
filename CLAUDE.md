@@ -10,14 +10,15 @@ Homelab Docker services monorepo. Each service lives in its own subdirectory wit
 
 Uses [Taskfile](https://taskfile.dev) (`task` CLI). Secrets loaded from `.env.local` (gitignored; copy `.env.template` to create).
 
-| Command | Alias | Description |
-|---|---|---|
-| `task proxy:compose` | `p:c` | Deploy proxy-manager |
-| `task registry:compose` | `r:c` | Deploy docker-registry + UI |
-| `task registry:compose BEHIND_PROXY=true` | | Deploy registry behind proxy network |
+| Command                                   | Alias | Description                          |
+| ----------------------------------------- | ----- | ------------------------------------ |
+| `task proxy:compose`                      | `p:c` | Deploy proxy-manager                 |
+| `task registry:compose`                   | `r:c` | Deploy docker-registry + UI          |
+| `task registry:compose BEHIND_PROXY=true` |       | Deploy registry behind proxy network |
 
 CLI_ARGS passthrough:
-- *(empty)* — detached (`-d`), print logs, leave running
+
+- _(empty)_ — detached (`-d`), print logs, leave running
 - `-- attach` — foreground, tear down on exit
 - `-- down` — stop and remove
 
@@ -54,3 +55,9 @@ docker network create proxy
 ## Environment Variables
 
 `.env.template` documents all required vars. `.env.local` holds real values and is loaded automatically by Taskfile. Variables are marked required with `${VAR:?error}` in compose files — missing vars fail fast at `docker compose up`.
+
+## Services
+
+### Docker Registry UI
+
+@https://raw.githubusercontent.com/eznix86/docker-registry-ui/refs/heads/main/README.md

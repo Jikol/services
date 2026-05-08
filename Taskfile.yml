@@ -6,58 +6,87 @@ dotenv: [".env.local"]
 
 tasks:
   ## deployment tasks ##
-  proxy:compose:
-    desc: |
-      Run proxy-manager docker compose | 
-      Usage: task proxy:compose (p:c) [
-        -- attach; -- down;
+  proxy-manager:compose:
+    desc: >
+      Run proxy-manager docker compose |
+      Usage: task proxy-manager:compose (pm:c) [
+      -- [purge] [attach|down];
       ]
-    aliases: [p:c]
+    aliases: [pm:c]
     requires:
       vars:
         - PROXY_MANAGER_EMAIL
         - PROXY_MANAGER_PASSWORD
+    vars:
+      SERVICE_DIR: "{{.ROOT_DIR}}/proxy-manager"
+      ENVS: []
+    dir: "{{.SERVICE_DIR}}"
     cmds:
       - task: docker:compose
         vars:
+          ENVS:
+            ref: .ENVS
           CLI_ARGS: "{{.CLI_ARGS}}"
-          SERVICE_DIR: proxy-manager
+          SERVICE_DIR: "{{.SERVICE_DIR}}"
+          PURGE_DIRS: "{{.SERVICE_DIR}}/data {{.SERVICE_DIR}}/letsencrypt"
 
-  registry:compose:
-    desc: |
+  docker-registry:compose:
+    desc: >
       Run docker-registry docker compose |
-      Usage: task registry:compose (p:c) [
-        -- attach; -- down;
-        BEHIND_PROXY=true/false, default false;
+      Usage: task docker-registry:compose (dr:c) [
+      -- [proxy] [purge] [attach|down];
       ]
-    aliases: [r:c]
-    vars:
-      BEHIND_PROXY: '{{.BEHIND_PROXY | default "false"}}'
+    aliases: [dr:c]
     requires:
       vars:
-        - REGISTRY_PROTOCOL
-        - REGISTRY_HOSTNAME
-        - REGISTRY_PORT
+        - DOCKER_REGISTRY_HOSTNAME
+        - DOCKER_REGISTRY_USERNAME
+        - DOCKER_REGISTRY_PASSWORD
+    vars:
+      SERVICE_DIR: "{{.ROOT_DIR}}/docker-registry"
+      AUTH_STRING:
+        sh: >-
+          printf '%s' "{{.DOCKER_REGISTRY_USERNAME}}:{{.DOCKER_REGISTRY_PASSWORD}}" | 
+          base64 -w 0
+      ENVS:
+        - AUTH_STRING={{.AUTH_STRING}}
+    dir: "{{.SERVICE_DIR}}"
     cmds:
+      - cmd: sudo rm -rf auth
+        if: '{{contains "purge" .CLI_ARGS}}'
+      - cmd: sudo mkdir -p auth
+      - cmd: >-
+          docker run --rm --entrypoint htpasswd httpd:2
+          -Bbn {{.DOCKER_REGISTRY_USERNAME}} {{.DOCKER_REGISTRY_PASSWORD}} |
+          sudo tee auth/htpasswd > /dev/null
       - task: docker:compose
         vars:
+          ENVS:
+            ref: .ENVS
           CLI_ARGS: "{{.CLI_ARGS}}"
-          SERVICE_DIR: docker-registry
-          ADDITIONAL_COMPOSE: '{{if eq .BEHIND_PROXY "true"}}compose.proxy.yml{{end}}'
+          SERVICE_DIR: "{{.SERVICE_DIR}}"
+          PURGE_DIRS: "{{.SERVICE_DIR}}/data"
+          ADDITIONAL_COMPOSE: '{{if contains "proxy" .CLI_ARGS}}compose.proxy.yml{{end}}'
   ## ---------------- ##
   ## internal tasks ##
   docker:compose:
     internal: true
-    dir: "{{.ROOT_DIR}}/{{.SERVICE_DIR}}"
+    dir: "{{.SERVICE_DIR}}"
     platforms: [linux]
     vars:
       COMPOSE_FILES: "-f compose.yml{{if .ADDITIONAL_COMPOSE}} -f {{.ADDITIONAL_COMPOSE}}{{end}}"
+      COMPOSE_ENV: "{{range .ENVS}}{{.}} {{end}}"
+      PURGE_DIRS: '{{.PURGE_DIRS | default ""}}'
     cmds:
+      - cmd: |-
+          env {{.COMPOSE_ENV}}docker compose {{.COMPOSE_FILES}} down --remove-orphans
+          sudo rm -rf {{.PURGE_DIRS}}
+        if: '{{contains "purge" .CLI_ARGS}}'
       # prettier-ignore
       - cmd: |-
-          sh -c '
+          env {{.COMPOSE_ENV}}sh -c '
           trap "docker compose {{.COMPOSE_FILES}} down --remove-orphans; exit 0" INT
-          docker compose {{.COMPOSE_FILES}} up -d --force-recreate
+          docker compose {{.COMPOSE_FILES}} up -d --no-build --force-recreate --wait
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             docker compose {{.COMPOSE_FILES}} logs
@@ -66,20 +95,25 @@ tasks:
           fi
           docker compose {{.COMPOSE_FILES}} logs
           '
-        if: '{{eq .CLI_ARGS ""}}'
+        if: '{{and (not (contains "attach" .CLI_ARGS)) (not (contains "down" .CLI_ARGS))}}'
       - cmd: |-
-          sh -c '
+          env {{.COMPOSE_ENV}}sh -c '
           trap "docker compose {{.COMPOSE_FILES}} down --remove-orphans; exit 0" INT
-          docker compose {{.COMPOSE_FILES}} up --force-recreate
+          docker compose {{.COMPOSE_FILES}} up -d --no-build --force-recreate --wait
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             docker compose {{.COMPOSE_FILES}} logs
             docker compose {{.COMPOSE_FILES}} down --remove-orphans
             exit 1
           fi
+          docker compose {{.COMPOSE_FILES}} logs -f
           docker compose {{.COMPOSE_FILES}} down --remove-orphans
           '
-        if: '{{eq .CLI_ARGS "attach"}}'
-      - cmd: docker compose {{.COMPOSE_FILES}} down --remove-orphans
-        if: '{{eq .CLI_ARGS "down"}}'
+        if: '{{and (contains "attach" .CLI_ARGS) (not (contains "down" .CLI_ARGS))}}'
+      - cmd: env {{.COMPOSE_ENV}}docker compose {{.COMPOSE_FILES}} down --remove-orphans
+        if: '{{and (contains "down" .CLI_ARGS) (not (contains "attach" .CLI_ARGS))}}'
+      - cmd: |-
+          echo "Error: invalid CLI_ARGS '{{.CLI_ARGS}}' — attach and down are mutually exclusive"
+          exit 1
+        if: '{{and (contains "attach" .CLI_ARGS) (contains "down" .CLI_ARGS)}}'
   ## -------------- ##

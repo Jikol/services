@@ -1,12 +1,18 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
+
 services:
   docker-registry:
     ports: []
     networks:
+      - default
       - proxy
 
   docker-registry-ui:
     ports: []
+    environment:
+      REGISTRY_URL: https://${DOCKER_REGISTRY_HOSTNAME}
     networks:
+      - default
       - proxy
 
 networks:
