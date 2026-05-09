@@ -11,6 +11,8 @@ services:
     ports: []
     environment:
       REGISTRY_URL: https://${DOCKER_REGISTRY_HOSTNAME}
+    extra_hosts:
+      - "${DOCKER_REGISTRY_HOSTNAME}:host-gateway"
     networks:
       - default
       - proxy
