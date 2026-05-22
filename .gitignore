@@ -1,8 +1,9 @@
-desktop.ini
 .claude
+
 **/*.local
+**/*/auth
 **/*/data
+**/*/database
 **/*/logs
 **/*/settings
-**/*/database
-**/*/auth
+desktop.ini

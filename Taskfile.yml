@@ -13,14 +13,14 @@ tasks:
       -- [purge] [attach|down];
       ]
     aliases: [pm:c]
+    dir: "{{.SERVICE_DIR}}"
+    vars:
+      SERVICE_DIR: "{{.ROOT_DIR}}/proxy-manager"
+      ENVS: []
     requires:
       vars:
         - PROXY_MANAGER_EMAIL
         - PROXY_MANAGER_PASSWORD
-    vars:
-      SERVICE_DIR: "{{.ROOT_DIR}}/proxy-manager"
-      ENVS: []
-    dir: "{{.SERVICE_DIR}}"
     cmds:
       - task: docker:compose
         vars:
@@ -37,20 +37,20 @@ tasks:
       -- [proxy] [purge] [attach|down];
       ]
     aliases: [dr:c]
+    dir: "{{.SERVICE_DIR}}"
+    vars:
+      SERVICE_DIR: "{{.ROOT_DIR}}/docker-registry"
+      AUTH_STRING:
+        sh: >-
+          printf '%s' "{{.DOCKER_REGISTRY_USERNAME}}:{{.DOCKER_REGISTRY_PASSWORD}}" |
+          base64 -w 0
+      ENVS:
+        - AUTH_STRING={{.AUTH_STRING}}
     requires:
       vars:
         - DOCKER_REGISTRY_HOSTNAME
         - DOCKER_REGISTRY_USERNAME
         - DOCKER_REGISTRY_PASSWORD
-    vars:
-      SERVICE_DIR: "{{.ROOT_DIR}}/docker-registry"
-      AUTH_STRING:
-        sh: >-
-          printf '%s' "{{.DOCKER_REGISTRY_USERNAME}}:{{.DOCKER_REGISTRY_PASSWORD}}" | 
-          base64 -w 0
-      ENVS:
-        - AUTH_STRING={{.AUTH_STRING}}
-    dir: "{{.SERVICE_DIR}}"
     cmds:
       - cmd: sudo rm -rf auth
         if: '{{contains "purge" .CLI_ARGS}}'
@@ -71,8 +71,8 @@ tasks:
   ## internal tasks ##
   docker:compose:
     internal: true
-    dir: "{{.SERVICE_DIR}}"
     platforms: [linux]
+    dir: "{{.SERVICE_DIR}}"
     vars:
       COMPOSE_FILES: "-f compose.yml{{if .ADDITIONAL_COMPOSE}} -f {{.ADDITIONAL_COMPOSE}}{{end}}"
       COMPOSE_ENV: "{{range .ENVS}}{{.}} {{end}}"
